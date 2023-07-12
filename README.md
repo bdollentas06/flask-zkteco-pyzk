@@ -3,8 +3,8 @@
 - python
 - pip
 # commands to run
-Note: use pip or pip3 depending on what version you have
-Note: Go to your project folder
+## Note: use pip or pip3 depending on what version you have
+## Run this command in your project file 
 -  pip3 install virtualenv
 -  virtualenv env
 -  source env/bin/activate
