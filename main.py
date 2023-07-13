@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 app = Flask(__name__)
-
+load_dotenv()
 # Database
 db = SQLAlchemy()
 app.config['SQLALCHEMY_DATABASE_URI'] = '{}://{}:{}@{}:{}/{}'.format(os.getenv("DB_CONNECTION"), os.getenv("DB_USERNAME"), os.getenv("DB_PASSWORD"), os.getenv("DB_HOST"), os.getenv("DB_PORT"), os.getenv("DB_DATABASE"))
@@ -53,6 +53,7 @@ class BiometricDevices(db.Model):
     host = db.Column(db.String(129))
     port = db.Column(db.String(20))
     status = db.Column(db.Integer)
+    deleted_at = db.Column(db.DateTime, nullable=True)
     def __init__(self, host, port, status):
         self.host = host
         self.port = port
@@ -85,11 +86,11 @@ class User(db.Model):
 @token_required
 def sync_all(): 
     conn = None
-    devices = BiometricDevices.query.filter_by(status = 1)
+    devices = BiometricDevices.query.filter(BiometricDevices.status == 1, BiometricDevices.deleted_at == None)
     for device in devices:
     # create ZK instance
         zk = zkInit(device.host, device.port)
-        other_device = BiometricDevices.query.filter(BiometricDevices.id != device.id, BiometricDevices.status == 1)
+        other_device = BiometricDevices.query.filter(BiometricDevices.id != device.id, BiometricDevices.status == 1, BiometricDevices.deleted_at == None)
         try:
             # connect to device
             conn = zk.connect()
@@ -138,6 +139,7 @@ def sync_per_user():
     for device in devices:
         zk = zkInit(device.host, int(device.port))
         other_device = BiometricDevices.query.filter(BiometricDevices.id != device.id, BiometricDevices.status == 1)
+        print()
         try:
             # connect to device
             conn = zk.connect()
