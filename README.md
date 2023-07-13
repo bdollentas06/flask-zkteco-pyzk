@@ -7,7 +7,7 @@
 ## Run this command in your project file 
 -  pip3 install virtualenv
 -  virtualenv env
--  source env/bin/activate
+-  source env/bin/activate (activate virtual enviorment)
 -  pip3 install -r requirements.txt
 -  python3 main.py (to run in development mode)
 
