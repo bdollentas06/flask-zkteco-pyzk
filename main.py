@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, jsonify, request, make_response, session
 from zk import ZK, const
 from flask_sqlalchemy import SQLAlchemy
 
@@ -135,10 +135,10 @@ def sync_all():
 def sync_per_user():
     user_id = request.json['id']
     conn = None
-    devices = BiometricDevices.query.filter_by(status = 1)
+    devices = BiometricDevices.query.filter(BiometricDevices.status == 1, BiometricDevices.deleted_at == None)
     for device in devices:
         zk = zkInit(device.host, int(device.port))
-        other_device = BiometricDevices.query.filter(BiometricDevices.id != device.id, BiometricDevices.status == 1)
+        other_device = BiometricDevices.query.filter(BiometricDevices.id != device.id, BiometricDevices.status == 1, BiometricDevices.deleted_at == None)
         print()
         try:
             # connect to device
