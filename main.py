@@ -1,5 +1,6 @@
 
 from flask import Flask, jsonify, request, make_response, session
+from flask_cors import CORS
 from zk import ZK, const
 from models import db, User, BiometricDevices, BiometricRfidUsers
 from config import ApplicationConfig
@@ -8,6 +9,7 @@ import jwt
 from functools import wraps
 
 app = Flask(__name__)
+CORS(app)
 #get all config in config.py
 app.config.from_object(ApplicationConfig)
 #initialiase db
@@ -85,7 +87,7 @@ def sync_all():
         finally:
             if conn:
                 conn.disconnect()
-    return jsonify({'msg': "All user's fingerprints are synced"})
+    return jsonify({'text': "All user's fingerprints are synced"})
 
 @app.route('/per-user-sync-finger', methods=["POST"])
 @token_required
@@ -96,7 +98,6 @@ def sync_per_user():
     for device in devices:
         zk = zkInit(device.host, int(device.port))
         other_device = BiometricDevices.query.filter(BiometricDevices.id != device.id, BiometricDevices.status == 1, BiometricDevices.deleted_at == None)
-        print()
         try:
             # connect to device
             conn = zk.connect()
@@ -132,11 +133,10 @@ def sync_per_user():
         finally:
             if conn:
                 conn.disconnect()
-    return jsonify({"msg": "User successfully synced"})
+    return make_response(jsonify({"text": "User successfully synced"}))
 
 def zkInit(host, port):
     return ZK(host, port=int(port), timeout=5, password=0, force_udp=False, ommit_ping=False)
-
 if __name__ == "__main__":
     app.run(debug=True)
 
