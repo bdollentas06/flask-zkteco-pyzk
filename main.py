@@ -1,24 +1,16 @@
-import os
-from dotenv import load_dotenv
+
 from flask import Flask, jsonify, request, make_response, session
 from zk import ZK, const
-from flask_sqlalchemy import SQLAlchemy
-
+from models import db, User, BiometricDevices, BiometricRfidUsers
+from config import ApplicationConfig
 # imports for PyJWT authentication
 import jwt
-from datetime import datetime, timedelta
 from functools import wraps
 
 app = Flask(__name__)
-load_dotenv()
-# Database
-db = SQLAlchemy()
-app.config['SQLALCHEMY_DATABASE_URI'] = '{}://{}:{}@{}:{}/{}'.format(os.getenv("DB_CONNECTION"), os.getenv("DB_USERNAME"), os.getenv("DB_PASSWORD"), os.getenv("DB_HOST"), os.getenv("DB_PORT"), os.getenv("DB_DATABASE"))
-# Binds other database
-app.config['SQLALCHEMY_BINDS'] = { 'nkti_adg': '{}://{}:{}@{}:{}/{}'.format(os.getenv("DB_CONNECTION"), os.getenv("ADG_DB_USERNAME"), os.getenv("ADG_DB_PASSWORD"), os.getenv("ADG_DB_HOST"), os.getenv("ADG_DB_PORT"), os.getenv("ADG_DB_DATABASE"))}
-app.config['SECRET_KEY'] = os.getenv("JWT_SECRET")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# Init db
+#get all config in config.py
+app.config.from_object(ApplicationConfig)
+#initialiase db
 db.init_app(app)
 
 # decorator for verifying the JWT
@@ -46,41 +38,6 @@ def token_required(f):
         return  f(*args, **kwargs)
   
     return decorated
-    
-class BiometricDevices(db.Model):
-    __bind_key__ = 'nkti_adg'
-    id = db.Column(db.Integer, primary_key=True)
-    host = db.Column(db.String(129))
-    port = db.Column(db.String(20))
-    status = db.Column(db.Integer)
-    deleted_at = db.Column(db.DateTime, nullable=True)
-    def __init__(self, host, port, status):
-        self.host = host
-        self.port = port
-        self.status = status
-    class Meta:
-        db_table = "biometric_devices"
-
-class BiometricRfidUsers(db.Model):
-    __bind_key__ = 'nkti_adg'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer)
-    device_user_id = db.Column(db.Integer)
-    unique_id = db.Column(db.String(9))
-    def __init__(self, user_id, device_user_id, unique_id):
-        self.user_id = user_id
-        self.device_user_id = device_user_id
-        self.unique_id = unique_id
-    class Meta:
-        db_table = "biometric_rfid_users"
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key = True)
-    name = db.Column(db.String(191))
-    email = db.Column(db.String(191))
-    password = db.Column(db.String(191))
-    status = db.Column(db.Integer())
-    remember_token = db.Column(db.String(191))
     
 @app.route('/sync-all-finger', methods=["POST"])
 @token_required
@@ -128,7 +85,7 @@ def sync_all():
         finally:
             if conn:
                 conn.disconnect()
-    return jsonify({'msg': "hello world"})
+    return jsonify({'msg': "All user's fingerprints are synced"})
 
 @app.route('/per-user-sync-finger', methods=["POST"])
 @token_required
